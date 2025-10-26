@@ -30,7 +30,7 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCountry, setSelectedCountry] = useState('ALL');
-  const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+  const [message, setMessage] = useState<{ type: 'success' | 'error' | 'info', text: string } | null>(null);
   const [crawled, setCrawled] = useState(false);
 
   useEffect(() => {
@@ -52,35 +52,54 @@ function App() {
     if (selectedCountry !== 'ALL') {
       filtered = filtered.filter(c => c.country === selectedCountry);
     }
-    console.log('API URL:', process.env.REACT_APP_API_URL);
+
     setFilteredCompanies(filtered);
   };
 
   const handleCrawl = async () => {
     setLoading(true);
-    setMessage(null);
+    setMessage({
+      type: 'info',
+      text: '⏳ Waking up backend server... This may take up to 60 seconds on the first request (free tier limitation).'
+    });
+    
     try {
+      console.log('🚀 Starting crawl...');
       const response = await api.crawlCompanies();
-      console.log('Crawl Response:', response);
+      console.log('✅ Crawl Response:', response);
+      
       const allCompanies = await api.getAllCompanies();
-      console.log('All Companies:', allCompanies);
+      console.log('✅ All Companies:', allCompanies);
+      
       setCompanies(allCompanies);
       setCrawled(true);
       setMessage({
         type: 'success',
-        text: `${response.message} (${response.companiesCrawled} companies)`
+        text: `✅ ${response.message} (${response.companiesCrawled} companies loaded)`
       });
-    } catch (error) {
-      console.error('Error during API call:', error);
+    } catch (error: any) {
+      console.error('❌ Error during API call:', error);
+      
+      let errorMessage = '❌ Failed to crawl companies. ';
+      
+      if (error.code === 'ECONNABORTED') {
+        errorMessage += '⏱️ Request timed out. The backend server is taking too long to wake up. Please try again in a moment.';
+      } else if (error.response) {
+        errorMessage += `Server error: ${error.response.status} - ${error.response.data?.message || 'Unknown error'}`;
+      } else if (error.request) {
+        errorMessage += '🌐 No response from server. Please check if the backend is running.';
+      } else {
+        errorMessage += `Error: ${error.message}`;
+      }
+      
       setMessage({
         type: 'error',
-        text: 'Failed to crawl companies. Make sure the backend is running on http://localhost:8080'
+        text: errorMessage
       });
     } finally {
       setLoading(false);
     }
   };
-
 
   const handleSearch = (value: string) => {
     setSearchQuery(value);
@@ -89,7 +108,7 @@ function App() {
   const handleCountryChange = (value: any) => {
     setSelectedCountry(value);
   };
-  console.log('API URL:', process.env.REACT_APP_API_URL);
+
   return (
     <div className="App">
       <Menu fixed='top' inverted>
@@ -98,6 +117,19 @@ function App() {
             <Icon name='world' />
             European Company Crawler
           </Menu.Item>
+          <Menu.Menu position='right'>
+            <Menu.Item>
+              <Icon name='github' />
+              <a 
+                href="https://github.com/THETOTOJ/JavaCompanyCrawler" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                style={{ color: 'white', marginLeft: '0.5em' }}
+              >
+                GitHub
+              </a>
+            </Menu.Item>
+          </Menu.Menu>
         </Container>
       </Menu>
 
@@ -128,6 +160,9 @@ function App() {
             <p style={{ marginTop: '1em', color: '#666' }}>
               Click to load company data from 3 European countries
             </p>
+            <p style={{ marginTop: '0.5em', color: '#999', fontSize: '0.9em' }}>
+              ℹ️ First request may take 50-60 seconds (free tier server wakes up from sleep)
+            </p>
           </div>
         )}
 
@@ -136,9 +171,15 @@ function App() {
           <Message
             success={message.type === 'success'}
             error={message.type === 'error'}
+            info={message.type === 'info'}
             onDismiss={() => setMessage(null)}
           >
-            {message.text}
+            <Message.Header>
+              {message.type === 'success' && '✅ Success'}
+              {message.type === 'error' && '❌ Error'}
+              {message.type === 'info' && 'ℹ️ Please wait'}
+            </Message.Header>
+            <p>{message.text}</p>
           </Message>
         )}
 
@@ -183,7 +224,7 @@ function App() {
         {loading && (
           <div style={{ textAlign: 'center', margin: '3em 0' }}>
             <Loader active inline='centered' size='huge'>
-              Crawling company data...
+              {message?.type === 'info' ? 'Waking up server...' : 'Crawling company data...'}
             </Loader>
           </div>
         )}

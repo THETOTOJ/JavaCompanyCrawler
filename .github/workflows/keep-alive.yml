@@ -1,0 +1,30 @@
+name: Keep Backend Alive
+
+on:
+  schedule:
+    # Runs every 10 minutes
+    - cron: '*/10 * * * *'
+  workflow_dispatch: # Allows manual trigger from GitHub UI
+
+jobs:
+  ping-backend:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Ping Backend Health Check
+        run: |
+          echo "🏓 Pinging backend to keep it alive..."
+          echo "🌐 URL: https://javacompanycrawler.onrender.com/api/companies"
+          
+          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" -X GET \
+            --max-time 120 \
+            https://javacompanycrawler.onrender.com/api/companies)
+          
+          if [ $RESPONSE -eq 200 ]; then
+            echo "✅ Backend is UP! (HTTP $RESPONSE)"
+          else
+            echo "⚠️ Backend returned HTTP $RESPONSE"
+          fi
+          
+      - name: Log Timestamp
+        run: echo "⏰ Pinged at $(date -u)"
