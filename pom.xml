@@ -9,9 +9,9 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.taha</groupId>
-	<artifactId>ApiCrawler</artifactId>
+	<artifactId>CompanyCrawler</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>ApiCrawler</name>
+	<name>CompanyCrawler</name>
 	<description>Java Api Learning project</description>
 	<url/>
 	<licenses>
