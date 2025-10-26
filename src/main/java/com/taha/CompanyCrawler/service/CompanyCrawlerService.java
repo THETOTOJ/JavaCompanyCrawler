@@ -20,6 +20,10 @@ public class CompanyCrawlerService {
     public int crawlAllCompanies() {
         log.info("Starting company data crawling...");
 
+        // Clear existing data to avoid duplicate key errors
+        companyRepository.deleteAll();
+        log.info("Cleared existing company data");
+
         // Get companies from all sources
         List<Company> allCompanies = mockDataService.getAllCompanies();
 
